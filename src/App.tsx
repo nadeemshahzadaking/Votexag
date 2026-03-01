@@ -69,7 +69,9 @@ import {
   Code2,
   Terminal,
   Binary,
-  Atom
+  Atom,
+  FolderOpen,
+  Timer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useDropzone } from 'react-dropzone';
@@ -136,9 +138,6 @@ const Header = () => {
           <h1 className="text-xl font-bold tracking-tight text-white">{WEBSITE_NAME} <span className="text-emerald-500">PRO</span></h1>
         </div>
         <nav className="hidden md:flex items-center gap-8">
-          <a href="#" className="text-sm font-medium text-white/60 hover:text-white transition-colors">Dashboard</a>
-          <a href="#" className="text-sm font-medium text-white/60 hover:text-white transition-colors">History</a>
-          <div className="h-4 w-px bg-white/10" />
           <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">System Ready</span>
@@ -185,6 +184,7 @@ export default function App() {
   const [downloadedClips, setDownloadedClips] = useState<Set<string>>(new Set());
   const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
+  const [directoryHandle, setDirectoryHandle] = useState<any>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const ffmpegRef = useRef(new FFmpeg());
@@ -230,8 +230,23 @@ export default function App() {
     setMetadata(null);
     setClips([]);
     setDownloadedClips(new Set());
+    setDirectoryHandle(null);
     setProgress(0);
     setNotification({ message: "System reset. All processes stopped.", type: 'info' });
+  };
+
+  const selectFolder = async () => {
+    try {
+      if ('showDirectoryPicker' in window) {
+        const handle = await (window as any).showDirectoryPicker();
+        setDirectoryHandle(handle);
+        setNotification({ message: `Output folder set to: ${handle.name}`, type: 'success' });
+      } else {
+        setNotification({ message: "Folder selection not supported on this device. Using default downloads.", type: 'info' });
+      }
+    } catch (err) {
+      console.error("Folder selection error:", err);
+    }
   };
 
   // Live Calculations
@@ -257,7 +272,13 @@ export default function App() {
         durationPerClip = segmentSec;
       }
     }
-    return { totalClips, durationPerClip };
+
+    // Estimated time: 1s of video takes roughly 0.1s to process on ultrafast
+    const estimatedTime = totalClips * (durationPerClip * 0.15);
+    const allocatedDuration = totalClips * durationPerClip;
+    const remainingDuration = Math.max(0, metadata.duration - allocatedDuration);
+
+    return { totalClips, durationPerClip, estimatedTime, remainingDuration };
   };
 
   const liveStats = getLiveStats();
@@ -274,14 +295,12 @@ export default function App() {
     try {
       setNotification({ message: `Slicing ${clip.label}...`, type: 'info' });
       
-      // Write the file to FFmpeg's virtual file system if not already there
       try {
         await ffmpeg.writeFile('input.mp4', await fetchFile(videoFile));
       } catch (e) {}
 
       if (stopQueueRef.current) return;
 
-      // Faster slicing settings
       await ffmpeg.exec([
         '-ss', clip.startTime.toFixed(3),
         '-to', clip.endTime.toFixed(3),
@@ -297,17 +316,36 @@ export default function App() {
 
       if (stopQueueRef.current) return;
 
-      // Read the result
       const data = await ffmpeg.readFile('output.' + outputFormat);
-      const url = URL.createObjectURL(new Blob([(data as Uint8Array).buffer], { type: `video/${outputFormat}` }));
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const blob = new Blob([(data as Uint8Array).buffer], { type: `video/${outputFormat}` });
+
+      if (directoryHandle) {
+        try {
+          const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+        } catch (err) {
+          console.error("Direct save error, falling back to download:", err);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
 
       setDownloadedClips(prev => new Set(prev).add(clip.id));
       setNotification({ message: `${clip.label} ready!`, type: 'success' });
@@ -718,21 +756,45 @@ export default function App() {
                           />
                         </div>
                         {liveStats && (
-                          <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-4"
-                          >
-                            <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shrink-0">
-                              <Clock className="text-black w-6 h-6" />
+                          <div className="space-y-4">
+                            <motion.div 
+                              initial={{ scale: 0.9, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-4"
+                            >
+                              <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shrink-0">
+                                <Clock className="text-black w-6 h-6" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mb-1">Animated Calculation</p>
+                                <div className="flex justify-between items-center">
+                                  <p className="text-sm text-white/80">
+                                    Each part: <span className="text-emerald-400 font-mono font-bold">{formatTime(liveStats.durationPerClip, true)}</span>
+                                  </p>
+                                  <p className="text-[10px] text-white/40 font-mono">
+                                    Remaining: {formatTime(liveStats.remainingDuration)}
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
+                                <Timer className="w-4 h-4 text-emerald-500" />
+                                <div>
+                                  <p className="text-[8px] uppercase text-white/40 font-bold">Est. Time</p>
+                                  <p className="text-xs font-mono text-emerald-400">~{Math.ceil(liveStats.estimatedTime)}s</p>
+                                </div>
+                              </div>
+                              <div className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
+                                <Zap className="w-4 h-4 text-emerald-500" />
+                                <div>
+                                  <p className="text-[8px] uppercase text-white/40 font-bold">Speed</p>
+                                  <p className="text-xs font-mono text-emerald-400">Ultra Fast</p>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mb-1">Animated Calculation</p>
-                              <p className="text-sm text-white/80">
-                                Each part: <span className="text-emerald-400 font-mono font-bold">{formatTime(liveStats.durationPerClip, true)}</span>
-                              </p>
-                            </div>
-                          </motion.div>
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -781,36 +843,78 @@ export default function App() {
                           </div>
                         </div>
                         {liveStats && (
-                          <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-4"
-                          >
-                            <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shrink-0">
-                              <Layers className="text-black w-6 h-6" />
+                          <div className="space-y-4">
+                            <motion.div 
+                              initial={{ scale: 0.9, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-4"
+                            >
+                              <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shrink-0">
+                                <Layers className="text-black w-6 h-6" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mb-1">Animated Calculation</p>
+                                <div className="flex justify-between items-center">
+                                  <p className="text-sm text-white/80">
+                                    Total Clips: <span className="text-emerald-400 font-mono font-bold">{liveStats.totalClips}</span>
+                                  </p>
+                                  <p className="text-[10px] text-white/40 font-mono">
+                                    Remaining: {formatTime(liveStats.remainingDuration)}
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
+                                <Timer className="w-4 h-4 text-emerald-500" />
+                                <div>
+                                  <p className="text-[8px] uppercase text-white/40 font-bold">Est. Time</p>
+                                  <p className="text-xs font-mono text-emerald-400">~{Math.ceil(liveStats.estimatedTime)}s</p>
+                                </div>
+                              </div>
+                              <div className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
+                                <Zap className="w-4 h-4 text-emerald-500" />
+                                <div>
+                                  <p className="text-[8px] uppercase text-white/40 font-bold">Speed</p>
+                                  <p className="text-xs font-mono text-emerald-400">Ultra Fast</p>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mb-1">Animated Calculation</p>
-                              <p className="text-sm text-white/80">
-                                Total Clips: <span className="text-emerald-400 font-mono font-bold">{liveStats.totalClips}</span>
-                              </p>
-                            </div>
-                          </motion.div>
+                          </div>
                         )}
                       </div>
                     )}
 
-                    <div className="space-y-3">
-                      <label className="text-xs font-bold text-white/40 uppercase tracking-widest">Output Format</label>
-                      <select 
-                        value={outputFormat}
-                        onChange={(e) => setOutputFormat(e.target.value)}
-                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 appearance-none focus:border-emerald-500 outline-none transition-colors"
-                      >
-                        {VIDEO_FORMATS.map(fmt => (
-                          <option key={fmt.value} value={fmt.value}>{fmt.label}</option>
-                        ))}
-                      </select>
+                    {/* Format Selector */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <label className="text-xs font-bold text-white/40 uppercase tracking-widest">Output Format</label>
+                        <select 
+                          value={outputFormat}
+                          onChange={(e) => setOutputFormat(e.target.value)}
+                          className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 appearance-none focus:border-emerald-500 outline-none transition-colors"
+                        >
+                          {VIDEO_FORMATS.map(fmt => (
+                            <option key={fmt.value} value={fmt.value}>{fmt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-xs font-bold text-white/40 uppercase tracking-widest">Output Folder</label>
+                        <button 
+                          onClick={selectFolder}
+                          className={cn(
+                            "w-full px-4 py-3 rounded-xl border flex items-center justify-center gap-2 transition-all",
+                            directoryHandle ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-500" : "bg-black border-white/10 text-white/40 hover:border-white/20"
+                          )}
+                        >
+                          <FolderOpen className="w-4 h-4" />
+                          <span className="text-sm font-medium truncate">
+                            {directoryHandle ? directoryHandle.name : "Select Folder"}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -848,18 +952,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Pro Features Card */}
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-8 text-black relative overflow-hidden group">
-                  <div className="relative z-10 space-y-4">
-                    <h4 className="text-2xl font-bold leading-tight">Monetize Your <br />Video Content</h4>
-                    <p className="text-black/70 text-sm font-medium">Get advanced AI analysis and direct YouTube/TikTok export with Pro.</p>
-                    <button className="bg-black text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-black/80 transition-colors">
-                      Learn More
-                    </button>
-                  </div>
-                  <Zap className="absolute -right-4 -bottom-4 w-32 h-32 text-black/10 rotate-12 group-hover:scale-110 transition-transform" />
-                </div>
-
               </div>
             </div>
           </div>
@@ -873,11 +965,6 @@ export default function App() {
             <span className="text-sm font-bold uppercase tracking-tighter">ProSlice AI Engine v2.4</span>
           </div>
           <p className="text-white/30 text-xs">© 2026 ProSlice Technologies. All rights reserved.</p>
-          <div className="flex items-center gap-6 text-xs text-white/40">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Support</a>
-          </div>
         </div>
       </footer>
     </div>
