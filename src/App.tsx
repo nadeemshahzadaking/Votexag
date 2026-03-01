@@ -175,10 +175,11 @@ export default function App() {
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [splitMode, setSplitMode] = useState<'parts' | 'time'>('parts');
-  const [partsCount, setPartsCount] = useState(5);
-  const [timeValue, setTimeValue] = useState({ h: 0, m: 5, s: 0 });
+  const [partsCount, setPartsCount] = useState<number | string>(2);
+  const [timeValue, setTimeValue] = useState({ h: '', m: '', s: '' });
   const [clips, setClips] = useState<VideoClip[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [outputFormat, setOutputFormat] = useState('mp4');
   const [downloadedClips, setDownloadedClips] = useState<Set<string>>(new Set());
@@ -187,6 +188,7 @@ export default function App() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const ffmpegRef = useRef(new FFmpeg());
+  const stopQueueRef = useRef(false);
 
   useEffect(() => {
     if (notification) {
@@ -215,6 +217,10 @@ export default function App() {
   };
 
   const resetSystem = async () => {
+    stopQueueRef.current = true;
+    setIsBulkDownloading(false);
+    setIsProcessing(false);
+    
     if (videoFile) {
       try {
         await ffmpegRef.current.deleteFile('input.mp4');
@@ -225,7 +231,7 @@ export default function App() {
     setClips([]);
     setDownloadedClips(new Set());
     setProgress(0);
-    setNotification({ message: "System reset. Ready for new video.", type: 'info' });
+    setNotification({ message: "System reset. All processes stopped.", type: 'info' });
   };
 
   // Live Calculations
@@ -234,12 +240,19 @@ export default function App() {
     let totalClips = 0;
     let durationPerClip = 0;
 
+    const currentParts = typeof partsCount === 'string' ? parseInt(partsCount) || 0 : partsCount;
+
     if (splitMode === 'parts') {
-      totalClips = partsCount;
-      durationPerClip = metadata.duration / partsCount;
+      if (currentParts >= 2) {
+        totalClips = currentParts;
+        durationPerClip = metadata.duration / currentParts;
+      }
     } else {
-      const segmentSec = (timeValue.h * 3600) + (timeValue.m * 60) + timeValue.s;
-      if (segmentSec > 0) {
+      const h = parseInt(timeValue.h as string) || 0;
+      const m = parseInt(timeValue.m as string) || 0;
+      const s = parseInt(timeValue.s as string) || 0;
+      const segmentSec = (h * 3600) + (m * 60) + s;
+      if (segmentSec >= 1) {
         totalClips = Math.ceil(metadata.duration / segmentSec);
         durationPerClip = segmentSec;
       }
@@ -250,7 +263,7 @@ export default function App() {
   const liveStats = getLiveStats();
 
   const downloadClip = async (clip: VideoClip) => {
-    if (!videoFile || !ffmpegLoaded) return;
+    if (!videoFile || !ffmpegLoaded || stopQueueRef.current) return;
     if (downloadedClips.has(clip.id)) return;
     
     setIsProcessing(true);
@@ -259,27 +272,30 @@ export default function App() {
     const fileName = `${websiteName}_Part${clip.id.split('-')[1]}.${outputFormat}`;
 
     try {
-      setNotification({ message: `Slicing ${clip.label}... Please wait.`, type: 'info' });
+      setNotification({ message: `Slicing ${clip.label}...`, type: 'info' });
       
       // Write the file to FFmpeg's virtual file system if not already there
       try {
         await ffmpeg.writeFile('input.mp4', await fetchFile(videoFile));
-      } catch (e) {
-        // File might already exist
-      }
+      } catch (e) {}
 
-      // Execute the slice command with re-encoding for quality preservation
-      // Using libx264 for high quality and accuracy
+      if (stopQueueRef.current) return;
+
+      // Faster slicing settings
       await ffmpeg.exec([
         '-ss', clip.startTime.toFixed(3),
         '-to', clip.endTime.toFixed(3),
         '-i', 'input.mp4',
         '-c:v', 'libx264',
         '-preset', 'ultrafast',
-        '-crf', '22',
+        '-tune', 'fastdecode',
+        '-crf', '24',
         '-c:a', 'aac',
+        '-b:a', '128k',
         'output.' + outputFormat
       ]);
+
+      if (stopQueueRef.current) return;
 
       // Read the result
       const data = await ffmpeg.readFile('output.' + outputFormat);
@@ -294,26 +310,42 @@ export default function App() {
       URL.revokeObjectURL(url);
 
       setDownloadedClips(prev => new Set(prev).add(clip.id));
-      setNotification({ message: `${clip.label} downloaded successfully!`, type: 'success' });
+      setNotification({ message: `${clip.label} ready!`, type: 'success' });
       
-      // Cleanup output file
       await ffmpeg.deleteFile('output.' + outputFormat);
     } catch (error) {
       console.error('Slicing error:', error);
-      setNotification({ message: `Error slicing ${clip.label}.`, type: 'error' });
+      if (!stopQueueRef.current) {
+        setNotification({ message: `Error slicing ${clip.label}.`, type: 'error' });
+      }
     } finally {
       setIsProcessing(false);
     }
   };
 
   const downloadAll = async () => {
-    setNotification({ message: "Starting bulk download...", type: 'info' });
+    stopQueueRef.current = false;
+    setIsBulkDownloading(true);
+    setNotification({ message: "Processing all clips...", type: 'info' });
+    
     for (const clip of clips) {
+      if (stopQueueRef.current) break;
       if (!downloadedClips.has(clip.id)) {
         await downloadClip(clip);
       }
     }
-    setNotification({ message: "All clips processed successfully!", type: 'success' });
+    
+    setIsBulkDownloading(false);
+    if (!stopQueueRef.current) {
+      setNotification({ message: "All clips processed!", type: 'success' });
+    }
+  };
+
+  const cancelDownloads = () => {
+    stopQueueRef.current = true;
+    setIsBulkDownloading(false);
+    setIsProcessing(false);
+    setNotification({ message: "Downloads cancelled.", type: 'info' });
   };
 
   const onDrop = (acceptedFiles: File[]) => {
@@ -354,9 +386,14 @@ export default function App() {
   const handleSplit = () => {
     if (!metadata) return;
     
+    const currentParts = typeof partsCount === 'string' ? parseInt(partsCount) || 0 : partsCount;
+    const h = parseInt(timeValue.h as string) || 0;
+    const m = parseInt(timeValue.m as string) || 0;
+    const s = parseInt(timeValue.s as string) || 0;
+
     const segmentDuration = splitMode === 'parts' 
-      ? metadata.duration / partsCount 
-      : (timeValue.h * 3600) + (timeValue.m * 60) + timeValue.s;
+      ? metadata.duration / currentParts 
+      : (h * 3600) + (m * 60) + s;
 
     if (segmentDuration < 1) {
       setNotification({ message: "Clip duration must be at least 1 second.", type: 'error' });
@@ -367,12 +404,11 @@ export default function App() {
     setProgress(0);
     setClips([]);
     
-    const startTime = performance.now();
     const newClips: VideoClip[] = [];
     const totalDuration = metadata.duration;
 
     if (splitMode === 'parts') {
-      for (let i = 0; i < partsCount; i++) {
+      for (let i = 0; i < currentParts; i++) {
         newClips.push({
           id: `clip-${i + 1}`,
           startTime: i * segmentDuration,
@@ -402,7 +438,7 @@ export default function App() {
 
     let currentProgress = 0;
     const animateProgress = () => {
-      currentProgress += 5;
+      currentProgress += 10;
       if (currentProgress <= 100) {
         setProgress(currentProgress);
         requestAnimationFrame(animateProgress);
@@ -410,7 +446,7 @@ export default function App() {
         setClips(newClips);
         setIsProcessing(false);
         setProgress(0);
-        setNotification({ message: `Generated ${newClips.length} clips successfully!`, type: 'success' });
+        setNotification({ message: `Generated ${newClips.length} clips!`, type: 'success' });
       }
     };
     requestAnimationFrame(animateProgress);
@@ -560,13 +596,25 @@ export default function App() {
                         <Layers className="w-5 h-5 text-emerald-500" />
                         Generated Clips ({clips.length})
                       </h3>
-                      <button 
-                        onClick={downloadAll}
-                        className="flex items-center gap-2 text-sm font-medium text-emerald-500 hover:text-emerald-400 transition-colors"
-                      >
-                        <Download className="w-4 h-4" />
-                        Download All Clips
-                      </button>
+                      <div className="flex items-center gap-4">
+                        {isBulkDownloading ? (
+                          <button 
+                            onClick={cancelDownloads}
+                            className="flex items-center gap-2 text-sm font-medium text-red-500 hover:text-red-400 transition-colors"
+                          >
+                            <AlertCircle className="w-4 h-4" />
+                            Cancel All
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={downloadAll}
+                            className="flex items-center gap-2 text-sm font-medium text-emerald-500 hover:text-emerald-400 transition-colors"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download All
+                          </button>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
@@ -661,8 +709,11 @@ export default function App() {
                             type="number" 
                             min="2" 
                             max="1000" 
+                            placeholder="Example: 2"
                             value={partsCount}
-                            onChange={(e) => setPartsCount(Math.max(2, parseInt(e.target.value) || 2))}
+                            onFocus={(e) => { if (e.target.value === '0' || e.target.value === '2') setPartsCount(''); }}
+                            onBlur={(e) => { if (e.target.value === '') setPartsCount(2); }}
+                            onChange={(e) => setPartsCount(e.target.value)}
                             className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 font-mono focus:border-emerald-500 outline-none transition-colors"
                           />
                         </div>
@@ -692,8 +743,11 @@ export default function App() {
                             <div className="space-y-1">
                               <input 
                                 type="number" 
+                                placeholder="0"
                                 value={timeValue.h}
-                                onChange={(e) => setTimeValue({...timeValue, h: parseInt(e.target.value) || 0})}
+                                onFocus={(e) => { if (e.target.value === '0') setTimeValue({...timeValue, h: ''}); }}
+                                onBlur={(e) => { if (e.target.value === '') setTimeValue({...timeValue, h: '0'}); }}
+                                onChange={(e) => setTimeValue({...timeValue, h: e.target.value})}
                                 className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-center font-mono focus:border-emerald-500 outline-none transition-colors"
                               />
                               <p className="text-[10px] text-center text-white/30 uppercase">Hours</p>
@@ -703,8 +757,11 @@ export default function App() {
                             <div className="space-y-1">
                               <input 
                                 type="number" 
+                                placeholder="0"
                                 value={timeValue.m}
-                                onChange={(e) => setTimeValue({...timeValue, m: parseInt(e.target.value) || 0})}
+                                onFocus={(e) => { if (e.target.value === '0') setTimeValue({...timeValue, m: ''}); }}
+                                onBlur={(e) => { if (e.target.value === '') setTimeValue({...timeValue, m: '0'}); }}
+                                onChange={(e) => setTimeValue({...timeValue, m: e.target.value})}
                                 className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-center font-mono focus:border-emerald-500 outline-none transition-colors"
                               />
                               <p className="text-[10px] text-center text-white/30 uppercase">Minutes</p>
@@ -713,8 +770,11 @@ export default function App() {
                           <div className="space-y-1">
                             <input 
                               type="number" 
+                              placeholder="0"
                               value={timeValue.s}
-                              onChange={(e) => setTimeValue({...timeValue, s: parseInt(e.target.value) || 0})}
+                              onFocus={(e) => { if (e.target.value === '0') setTimeValue({...timeValue, s: ''}); }}
+                              onBlur={(e) => { if (e.target.value === '') setTimeValue({...timeValue, s: '0'}); }}
+                              onChange={(e) => setTimeValue({...timeValue, s: e.target.value})}
                               className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-center font-mono focus:border-emerald-500 outline-none transition-colors"
                             />
                             <p className="text-[10px] text-center text-white/30 uppercase">Seconds</p>
