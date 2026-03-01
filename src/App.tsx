@@ -100,113 +100,48 @@ interface VideoClip {
 // --- Constants ---
 const WEBSITE_NAME = "ProSlice AI";
 
-const LOGO_ICONS = [
-  { icon: Zap, name: "Flash", animation: "pulse" },
-  { icon: Bot, name: "Robot", animation: "bounce" },
-  { icon: Rocket, name: "Rocket", animation: "float" },
-  { icon: Ghost, name: "Ghost", animation: "float" },
-  { icon: Diamond, name: "Diamond", animation: "spin" },
-  { icon: Star, name: "Star", animation: "pulse" },
-  { icon: Crown, name: "Crown", animation: "bounce" },
-  { icon: Flame, name: "Flame", animation: "pulse" },
-  { icon: Heart, name: "Heart", animation: "pulse" },
-  { icon: Moon, name: "Moon", animation: "float" },
-  { icon: Sun, name: "Sun", animation: "spin" },
-  { icon: Cloud, name: "Cloud", animation: "float" },
-  { icon: Compass, name: "Compass", animation: "spin" },
-  { icon: Anchor, name: "Anchor", animation: "bounce" },
-  { icon: Target, name: "Target", animation: "pulse" },
-  { icon: Trophy, name: "Trophy", animation: "bounce" },
-  { icon: Gift, name: "Gift", animation: "bounce" },
-  { icon: Coffee, name: "Coffee", animation: "float" },
-  { icon: Music, name: "Music", animation: "pulse" },
-  { icon: Camera, name: "Camera", animation: "bounce" },
-  { icon: Globe, name: "Globe", animation: "spin" },
-  { icon: Shield, name: "Shield", animation: "pulse" },
-  { icon: Key, name: "Key", animation: "bounce" },
-  { icon: Bell, name: "Bell", animation: "bounce" },
-  { icon: Mail, name: "Mail", animation: "float" },
-  { icon: Map, name: "Map", animation: "bounce" },
-  { icon: Umbrella, name: "Umbrella", animation: "float" },
-  { icon: Watch, name: "Watch", animation: "spin" },
-  { icon: Smartphone, name: "Phone", animation: "bounce" },
-  { icon: Laptop, name: "Laptop", animation: "pulse" },
-  { icon: Cpu, name: "Chip", animation: "pulse" },
-  { icon: Database, name: "Data", animation: "bounce" },
-  { icon: CloudLightning, name: "Storm", animation: "pulse" },
-  { icon: Wind, name: "Wind", animation: "float" },
-  { icon: Droplets, name: "Water", animation: "float" },
-  { icon: Leaf, name: "Leaf", animation: "float" },
-  { icon: TreePine, name: "Tree", animation: "bounce" },
-  { icon: Mountain, name: "Mountain", animation: "pulse" },
-  { icon: Bird, name: "Bird", animation: "float" },
-  { icon: Fish, name: "Fish", animation: "float" },
-  { icon: Bug, name: "Bug", animation: "bounce" },
-  { icon: PawPrint, name: "Paw", animation: "bounce" },
-  { icon: Smile, name: "Smile", animation: "pulse" },
-  { icon: Glasses, name: "Glasses", animation: "bounce" },
-  { icon: Palette, name: "Art", animation: "pulse" },
-  { icon: PenTool, name: "Design", animation: "bounce" },
-  { icon: Code2, name: "Code", animation: "pulse" },
-  { icon: Terminal, name: "Console", animation: "pulse" },
-  { icon: Binary, name: "Binary", animation: "pulse" },
-  { icon: Atom, name: "Atom", animation: "spin" }
+const VIDEO_FORMATS = [
+  { value: 'mp4', label: 'MP4 (Standard)' },
+  { value: 'mkv', label: 'MKV (High Quality)' },
+  { value: 'mov', label: 'MOV (Apple)' },
+  { value: 'avi', label: 'AVI (Legacy)' },
+  { value: 'webm', label: 'WebM (Web)' },
+  { value: 'flv', label: 'FLV (Flash)' },
+  { value: 'wmv', label: 'WMV (Windows)' },
+  { value: '3gp', label: '3GP (Mobile)' },
+  { value: 'm4v', label: 'M4V (iTunes)' },
+  { value: 'mpg', label: 'MPG (MPEG-1)' },
+  { value: 'mpeg', label: 'MPEG (MPEG-2)' },
+  { value: 'ts', label: 'TS (Transport Stream)' },
+  { value: 'vob', label: 'VOB (DVD)' },
+  { value: 'asf', label: 'ASF (Advanced Systems)' },
+  { value: 'ogv', label: 'OGV (Ogg Video)' },
+  { value: 'm2ts', label: 'M2TS (Blu-ray)' },
+  { value: 'f4v', label: 'F4V (Flash HD)' },
+  { value: 'divx', label: 'DivX (High Speed)' },
+  { value: 'xvid', label: 'Xvid (Open Source)' },
+  { value: 'rm', label: 'RealMedia (Classic)' }
 ];
-
-const ANIMATED_LOGOS = LOGO_ICONS.map((item, i) => ({
-  id: i + 1,
-  ...item,
-  color: [
-    'bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-red-500', 'bg-orange-500', 
-    'bg-pink-500', 'bg-cyan-500', 'bg-yellow-500', 'bg-indigo-500', 'bg-teal-500'
-  ][i % 10]
-}));
-
-const AnimatedCharacter = ({ logoId, size = "w-8 h-8", className = "" }: { logoId: number, size?: string, className?: string }) => {
-  const logo = ANIMATED_LOGOS.find(l => l.id === logoId) || ANIMATED_LOGOS[0];
-  const Icon = logo.icon;
-
-  const getAnimation = () => {
-    switch (logo.animation) {
-      case 'spin': return { rotate: 360 };
-      case 'bounce': return { y: [0, -10, 0] };
-      case 'float': return { y: [0, -5, 0], x: [0, 2, 0] };
-      case 'pulse': return { scale: [1, 1.1, 1] };
-      default: return {};
-    }
-  };
-
-  const getTransition = () => {
-    return { duration: logo.animation === 'spin' ? 4 : 2, repeat: Infinity, ease: "easeInOut" };
-  };
-
-  return (
-    <motion.div 
-      animate={getAnimation()}
-      transition={getTransition()}
-      className={cn(size, "rounded-lg flex items-center justify-center shadow-lg", logo.color, className)}
-    >
-      <Icon className="text-black w-3/5 h-3/5 fill-current" />
-    </motion.div>
-  );
-};
 
 // --- Components ---
 
-const Header = ({ selectedLogo }: { selectedLogo: number }) => {
+const Header = () => {
   return (
     <header className="border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <AnimatedCharacter logoId={selectedLogo} />
+          <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <Zap className="text-black w-6 h-6 fill-current" />
+          </div>
           <h1 className="text-xl font-bold tracking-tight text-white">{WEBSITE_NAME} <span className="text-emerald-500">PRO</span></h1>
         </div>
         <nav className="hidden md:flex items-center gap-8">
           <a href="#" className="text-sm font-medium text-white/60 hover:text-white transition-colors">Dashboard</a>
           <a href="#" className="text-sm font-medium text-white/60 hover:text-white transition-colors">History</a>
           <div className="h-4 w-px bg-white/10" />
-          <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Active Character: #{selectedLogo}</span>
+          <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">System Ready</span>
           </div>
         </nav>
       </div>
@@ -246,25 +181,51 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [outputFormat, setOutputFormat] = useState('mp4');
-  const [selectedLogo, setSelectedLogo] = useState(1);
   const [downloadedClips, setDownloadedClips] = useState<Set<string>>(new Set());
   const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
+  const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const ffmpegRef = useRef(new FFmpeg());
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   useEffect(() => {
     loadFFmpeg();
   }, []);
 
   const loadFFmpeg = async () => {
-    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
-    const ffmpeg = ffmpegRef.current;
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    });
-    setFfmpegLoaded(true);
+    try {
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+      const ffmpeg = ffmpegRef.current;
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+      setFfmpegLoaded(true);
+    } catch (err) {
+      console.error("FFmpeg Load Error:", err);
+      setNotification({ message: "Failed to load slicing engine. Please refresh.", type: 'error' });
+    }
+  };
+
+  const resetSystem = async () => {
+    if (videoFile) {
+      try {
+        await ffmpegRef.current.deleteFile('input.mp4');
+      } catch (e) {}
+    }
+    setVideoFile(null);
+    setMetadata(null);
+    setClips([]);
+    setDownloadedClips(new Set());
+    setProgress(0);
+    setNotification({ message: "System reset. Ready for new video.", type: 'info' });
   };
 
   // Live Calculations
@@ -290,6 +251,7 @@ export default function App() {
 
   const downloadClip = async (clip: VideoClip) => {
     if (!videoFile || !ffmpegLoaded) return;
+    if (downloadedClips.has(clip.id)) return;
     
     setIsProcessing(true);
     const ffmpeg = ffmpegRef.current;
@@ -297,16 +259,25 @@ export default function App() {
     const fileName = `${websiteName}_Part${clip.id.split('-')[1]}.${outputFormat}`;
 
     try {
-      // Write the file to FFmpeg's virtual file system
-      await ffmpeg.writeFile('input.mp4', await fetchFile(videoFile));
+      setNotification({ message: `Slicing ${clip.label}... Please wait.`, type: 'info' });
+      
+      // Write the file to FFmpeg's virtual file system if not already there
+      try {
+        await ffmpeg.writeFile('input.mp4', await fetchFile(videoFile));
+      } catch (e) {
+        // File might already exist
+      }
 
-      // Execute the slice command
-      // -ss: start time, -to: end time, -c copy: fast slicing without re-encoding
+      // Execute the slice command with re-encoding for quality preservation
+      // Using libx264 for high quality and accuracy
       await ffmpeg.exec([
-        '-ss', clip.startTime.toString(),
-        '-to', clip.endTime.toString(),
+        '-ss', clip.startTime.toFixed(3),
+        '-to', clip.endTime.toFixed(3),
         '-i', 'input.mp4',
-        '-c', 'copy',
+        '-c:v', 'libx264',
+        '-preset', 'ultrafast',
+        '-crf', '22',
+        '-c:a', 'aac',
         'output.' + outputFormat
       ]);
 
@@ -323,18 +294,26 @@ export default function App() {
       URL.revokeObjectURL(url);
 
       setDownloadedClips(prev => new Set(prev).add(clip.id));
+      setNotification({ message: `${clip.label} downloaded successfully!`, type: 'success' });
+      
+      // Cleanup output file
+      await ffmpeg.deleteFile('output.' + outputFormat);
     } catch (error) {
       console.error('Slicing error:', error);
-      alert('Error slicing video. Please try a different format or smaller clip.');
+      setNotification({ message: `Error slicing ${clip.label}.`, type: 'error' });
     } finally {
       setIsProcessing(false);
     }
   };
 
   const downloadAll = async () => {
+    setNotification({ message: "Starting bulk download...", type: 'info' });
     for (const clip of clips) {
-      await downloadClip(clip);
+      if (!downloadedClips.has(clip.id)) {
+        await downloadClip(clip);
+      }
     }
+    setNotification({ message: "All clips processed successfully!", type: 'success' });
   };
 
   const onDrop = (acceptedFiles: File[]) => {
@@ -374,57 +353,56 @@ export default function App() {
 
   const handleSplit = () => {
     if (!metadata) return;
+    
+    const segmentDuration = splitMode === 'parts' 
+      ? metadata.duration / partsCount 
+      : (timeValue.h * 3600) + (timeValue.m * 60) + timeValue.s;
+
+    if (segmentDuration < 1) {
+      setNotification({ message: "Clip duration must be at least 1 second.", type: 'error' });
+      return;
+    }
+
     setIsProcessing(true);
     setProgress(0);
     setClips([]);
     
-    // Use requestAnimationFrame for high-speed UI updates
     const startTime = performance.now();
-    
-    // Immediate calculation for "Power"
     const newClips: VideoClip[] = [];
     const totalDuration = metadata.duration;
 
     if (splitMode === 'parts') {
-      const segmentDuration = totalDuration / partsCount;
       for (let i = 0; i < partsCount; i++) {
         newClips.push({
-          id: `clip-${i}`,
+          id: `clip-${i + 1}`,
           startTime: i * segmentDuration,
-          endTime: (i + 1) * segmentDuration,
-          duration: segmentDuration,
+          endTime: Math.min((i + 1) * segmentDuration, totalDuration),
+          duration: Math.min((i + 1) * segmentDuration, totalDuration) - (i * segmentDuration),
           label: `Part ${i + 1}`
         });
       }
     } else {
-      // High precision duration calculation (ms)
-      const segmentDuration = (timeValue.h * 3600) + (timeValue.m * 60) + timeValue.s + (0.001); // Add precision
-      if (segmentDuration <= 0.001) {
-        setIsProcessing(false);
-        return;
-      }
-      
       let current = 0;
       let index = 1;
-      // Limit to 100,000 to prevent infinite loops but allow massive scale
       while (current < totalDuration && index <= 100000) {
         const end = Math.min(current + segmentDuration, totalDuration);
-        newClips.push({
-          id: `clip-${index}`,
-          startTime: current,
-          endTime: end,
-          duration: end - current,
-          label: `Clip ${index}`
-        });
+        if (end - current >= 1) {
+          newClips.push({
+            id: `clip-${index}`,
+            startTime: current,
+            endTime: end,
+            duration: end - current,
+            label: `Clip ${index}`
+          });
+        }
         current = end;
         index++;
       }
     }
 
-    // Fast progress simulation that matches the "Powerful" feel
     let currentProgress = 0;
     const animateProgress = () => {
-      currentProgress += 10; // Jump fast
+      currentProgress += 5;
       if (currentProgress <= 100) {
         setProgress(currentProgress);
         requestAnimationFrame(animateProgress);
@@ -432,7 +410,7 @@ export default function App() {
         setClips(newClips);
         setIsProcessing(false);
         setProgress(0);
-        console.log(`Processed ${newClips.length} clips in ${performance.now() - startTime}ms`);
+        setNotification({ message: `Generated ${newClips.length} clips successfully!`, type: 'success' });
       }
     };
     requestAnimationFrame(animateProgress);
@@ -440,49 +418,37 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white selection:bg-emerald-500/30">
-      <Header selectedLogo={selectedLogo} />
+      <Header />
+
+      {/* Notifications */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 20 }}
+            exit={{ opacity: 0, y: -50 }}
+            className={cn(
+              "fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border backdrop-blur-md",
+              notification.type === 'success' ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400" :
+              notification.type === 'error' ? "bg-red-500/20 border-red-500/50 text-red-400" :
+              "bg-blue-500/20 border-blue-500/50 text-blue-400"
+            )}
+          >
+            {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : 
+             notification.type === 'error' ? <AlertCircle className="w-5 h-5" /> : 
+             <Info className="w-5 h-5" />}
+            <span className="text-sm font-bold">{notification.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
-        {/* Logo Selection Section */}
-        <section className="mb-12 bg-white/[0.02] border border-white/10 rounded-3xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <Settings className="w-5 h-5 text-emerald-500" />
-              Select Brand Character
-            </h3>
-            <span className="text-xs text-white/40 font-mono">50 Unique Animated Characters</span>
-          </div>
-          <div className="grid grid-cols-5 sm:grid-cols-10 gap-3 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
-            {ANIMATED_LOGOS.map(logo => (
-              <button
-                key={logo.id}
-                onClick={() => setSelectedLogo(logo.id)}
-                className={cn(
-                  "aspect-square rounded-xl flex items-center justify-center transition-all relative group",
-                  selectedLogo === logo.id ? "ring-2 ring-emerald-500 scale-95 bg-white/5" : "hover:bg-white/5"
-                )}
-              >
-                <AnimatedCharacter logoId={logo.id} size="w-10 h-10" />
-                {selectedLogo === logo.id && (
-                  <div className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-0.5">
-                    <CheckCircle2 className="w-3 h-3 text-black" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-
         {!videoFile ? (
           <div className="max-w-3xl mx-auto space-y-12 py-20">
             <div className="text-center space-y-4">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="inline-block"
-              >
-                <AnimatedCharacter logoId={selectedLogo} size="w-24 h-24" className="mx-auto mb-8" />
-              </motion.div>
+              <div className="w-24 h-24 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-500/20 animate-bounce">
+                <Video className="text-black w-12 h-12" />
+              </div>
               <h2 className="text-5xl font-bold tracking-tight">
                 Ready to <span className="text-emerald-500 italic">Slice?</span>
               </h2>
@@ -500,16 +466,25 @@ export default function App() {
             >
               <input {...getInputProps()} />
               <div className="flex flex-col items-center text-center space-y-6">
-                <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                  <Upload className="w-10 h-10 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">Drop your masterpiece here</p>
-                  <p className="text-white/40 mt-2">Supports any video format, up to 5 hours long</p>
-                </div>
-                <button className="px-10 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.3)] transition-all">
-                  Select Video File
-                </button>
+                {isAnalyzing ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xl font-bold text-emerald-500 animate-pulse">Processing Video...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                      <Upload className="w-10 h-10 text-emerald-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">Drop your masterpiece here</p>
+                      <p className="text-white/40 mt-2">Supports any video format, up to 5 hours long</p>
+                    </div>
+                    <button className="px-10 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.3)] transition-all">
+                      Select Video File
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -528,14 +503,10 @@ export default function App() {
                     <span className="font-medium truncate max-w-[300px] text-sm">{videoFile.name}</span>
                   </div>
                   <button 
-                    onClick={() => {
-                      setVideoFile(null);
-                      setMetadata(null);
-                      setClips([]);
-                    }}
-                    className="px-3 py-1 bg-white/5 hover:bg-red-500/20 hover:text-red-400 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all"
+                    onClick={resetSystem}
+                    className="px-4 py-1.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full text-[10px] font-bold uppercase tracking-wider transition-all"
                   >
-                    Remove
+                    Continue with Other
                   </button>
                 </div>
 
@@ -687,25 +658,13 @@ export default function App() {
                         <label className="text-xs font-bold text-white/40 uppercase tracking-widest">Number of Parts</label>
                         <div className="flex items-center gap-4">
                           <input 
-                            type="range" 
+                            type="number" 
                             min="2" 
                             max="1000" 
                             value={partsCount}
-                            onChange={(e) => setPartsCount(parseInt(e.target.value))}
-                            className="flex-1 accent-emerald-500"
+                            onChange={(e) => setPartsCount(Math.max(2, parseInt(e.target.value) || 2))}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 font-mono focus:border-emerald-500 outline-none transition-colors"
                           />
-                          <span className="w-16 text-center font-mono text-xl">{partsCount}</span>
-                        </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2">
-                          {[10, 50, 100, 500, 1000].map(val => (
-                            <button 
-                              key={val}
-                              onClick={() => setPartsCount(val)}
-                              className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold hover:bg-emerald-500 hover:text-black transition-all"
-                            >
-                              {val}
-                            </button>
-                          ))}
                         </div>
                         {liveStats && (
                           <motion.div 
@@ -729,24 +688,28 @@ export default function App() {
                       <div className="space-y-3">
                         <label className="text-xs font-bold text-white/40 uppercase tracking-widest">Clip Duration</label>
                         <div className="grid grid-cols-3 gap-3">
-                          <div className="space-y-1">
-                            <input 
-                              type="number" 
-                              value={timeValue.h}
-                              onChange={(e) => setTimeValue({...timeValue, h: parseInt(e.target.value) || 0})}
-                              className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-center font-mono focus:border-emerald-500 outline-none transition-colors"
-                            />
-                            <p className="text-[10px] text-center text-white/30 uppercase">Hours</p>
-                          </div>
-                          <div className="space-y-1">
-                            <input 
-                              type="number" 
-                              value={timeValue.m}
-                              onChange={(e) => setTimeValue({...timeValue, m: parseInt(e.target.value) || 0})}
-                              className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-center font-mono focus:border-emerald-500 outline-none transition-colors"
-                            />
-                            <p className="text-[10px] text-center text-white/30 uppercase">Minutes</p>
-                          </div>
+                          {metadata && metadata.duration >= 3600 && (
+                            <div className="space-y-1">
+                              <input 
+                                type="number" 
+                                value={timeValue.h}
+                                onChange={(e) => setTimeValue({...timeValue, h: parseInt(e.target.value) || 0})}
+                                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-center font-mono focus:border-emerald-500 outline-none transition-colors"
+                              />
+                              <p className="text-[10px] text-center text-white/30 uppercase">Hours</p>
+                            </div>
+                          )}
+                          {metadata && metadata.duration >= 60 && (
+                            <div className="space-y-1">
+                              <input 
+                                type="number" 
+                                value={timeValue.m}
+                                onChange={(e) => setTimeValue({...timeValue, m: parseInt(e.target.value) || 0})}
+                                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-center font-mono focus:border-emerald-500 outline-none transition-colors"
+                              />
+                              <p className="text-[10px] text-center text-white/30 uppercase">Minutes</p>
+                            </div>
+                          )}
                           <div className="space-y-1">
                             <input 
                               type="number" 
@@ -777,7 +740,6 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Format Selector */}
                     <div className="space-y-3">
                       <label className="text-xs font-bold text-white/40 uppercase tracking-widest">Output Format</label>
                       <select 
@@ -785,10 +747,9 @@ export default function App() {
                         onChange={(e) => setOutputFormat(e.target.value)}
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 appearance-none focus:border-emerald-500 outline-none transition-colors"
                       >
-                        <option value="mp4">MP4 (High Compatibility)</option>
-                        <option value="mkv">MKV (Lossless)</option>
-                        <option value="mov">MOV (Apple ProRes)</option>
-                        <option value="avi">AVI (Legacy)</option>
+                        {VIDEO_FORMATS.map(fmt => (
+                          <option key={fmt.value} value={fmt.value}>{fmt.label}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
