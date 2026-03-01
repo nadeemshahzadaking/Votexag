@@ -100,7 +100,116 @@ interface VideoClip {
 }
 
 // --- Constants ---
+import { GoogleGenAI, Modality } from "@google/genai";
+
 const WEBSITE_NAME = "ProSlice AI";
+
+const LANGUAGES = [
+  { code: 'ur', name: 'Urdu' },
+  { code: 'en', name: 'English' },
+  { code: 'pa', name: 'Punjabi' },
+  { code: 'hi', name: 'Hindi' },
+  { code: 'ar', name: 'Arabic' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'fr', name: 'French' },
+  { code: 'de', name: 'German' },
+  { code: 'zh', name: 'Chinese' },
+  { code: 'ja', name: 'Japanese' },
+  { code: 'tr', name: 'Turkish' },
+  { code: 'it', name: 'Italian' },
+  { code: 'pt', name: 'Portuguese' },
+  { code: 'ru', name: 'Russian' },
+  { code: 'ko', name: 'Korean' },
+  { code: 'bn', name: 'Bengali' },
+  { code: 'fa', name: 'Persian' },
+  { code: 'ps', name: 'Pashto' },
+  { code: 'sd', name: 'Sindhi' },
+  { code: 'vi', name: 'Vietnamese' },
+  { code: 'th', name: 'Thai' },
+  { code: 'id', name: 'Indonesian' },
+  { code: 'ms', name: 'Malay' },
+  { code: 'nl', name: 'Dutch' },
+  { code: 'pl', name: 'Polish' },
+  { code: 'sv', name: 'Swedish' },
+  { code: 'no', name: 'Norwegian' },
+  { code: 'da', name: 'Danish' },
+  { code: 'fi', name: 'Finnish' },
+  { code: 'el', name: 'Greek' },
+  { code: 'he', name: 'Hebrew' },
+  { code: 'cs', name: 'Czech' },
+  { code: 'hu', name: 'Hungarian' },
+  { code: 'ro', name: 'Romanian' },
+  { code: 'uk', name: 'Ukrainian' },
+  { code: 'ta', name: 'Tamil' },
+  { code: 'te', name: 'Telugu' },
+  { code: 'kn', name: 'Kannada' },
+  { code: 'ml', name: 'Malayalam' },
+  { code: 'mr', name: 'Marathi' },
+  { code: 'gu', name: 'Gujarati' },
+  { code: 'am', name: 'Amharic' },
+  { code: 'sw', name: 'Swahili' },
+  { code: 'yo', name: 'Yoruba' },
+  { code: 'ig', name: 'Igbo' },
+  { code: 'zu', name: 'Zulu' },
+  { code: 'af', name: 'Afrikaans' },
+  { code: 'sq', name: 'Albanian' },
+  { code: 'hy', name: 'Armenian' },
+  { code: 'az', name: 'Azerbaijani' },
+  { code: 'eu', name: 'Basque' },
+  { code: 'be', name: 'Belarusian' },
+  { code: 'bs', name: 'Bosnian' },
+  { code: 'bg', name: 'Bulgarian' },
+  { code: 'ca', name: 'Catalan' },
+  { code: 'hr', name: 'Croatian' },
+  { code: 'et', name: 'Estonian' },
+  { code: 'gl', name: 'Galician' },
+  { code: 'ka', name: 'Georgian' },
+  { code: 'is', name: 'Icelandic' },
+  { code: 'kk', name: 'Kazakh' },
+  { code: 'km', name: 'Khmer' },
+  { code: 'ky', name: 'Kyrgyz' },
+  { code: 'lo', name: 'Lao' },
+  { code: 'lv', name: 'Latvian' },
+  { code: 'lt', name: 'Lithuanian' },
+  { code: 'mk', name: 'Macedonian' },
+  { code: 'mg', name: 'Malagasy' },
+  { code: 'mt', name: 'Maltese' },
+  { code: 'mi', name: 'Maori' },
+  { code: 'mn', name: 'Mongolian' },
+  { code: 'ne', name: 'Nepali' },
+  { code: 'si', name: 'Sinhala' },
+  { code: 'sk', name: 'Slovak' },
+  { code: 'sl', name: 'Slovenian' },
+  { code: 'so', name: 'Somali' },
+  { code: 'tg', name: 'Tajik' },
+  { code: 'uz', name: 'Uzbek' },
+  { code: 'cy', name: 'Welsh' },
+  { code: 'xh', name: 'Xhosa' },
+  { code: 'yi', name: 'Yiddish' }
+];
+
+const VOICES = [
+  { id: 'Zephyr', name: 'Zephyr (Deep)', gender: 'Male' },
+  { id: 'Kore', name: 'Kore (Clear)', gender: 'Female' },
+  { id: 'Fenrir', name: 'Fenrir (Bold)', gender: 'Male' },
+  { id: 'Puck', name: 'Puck (Playful)', gender: 'Male' },
+  { id: 'Charon', name: 'Charon (Steady)', gender: 'Male' },
+  { id: 'Aoede', name: 'Aoede (Soft)', gender: 'Female' },
+  { id: 'Nyx', name: 'Nyx (Mysterious)', gender: 'Female' },
+  { id: 'Eos', name: 'Eos (Bright)', gender: 'Female' },
+  { id: 'Aether', name: 'Aether (Airy)', gender: 'Male' },
+  { id: 'Gaia', name: 'Gaia (Warm)', gender: 'Female' },
+  { id: 'Helios', name: 'Helios (Radiant)', gender: 'Male' },
+  { id: 'Selene', name: 'Selene (Calm)', gender: 'Female' },
+  { id: 'Atlas', name: 'Atlas (Strong)', gender: 'Male' },
+  { id: 'Iris', name: 'Iris (Colorful)', gender: 'Female' },
+  { id: 'Hermes', name: 'Hermes (Fast)', gender: 'Male' },
+  { id: 'Hestia', name: 'Hestia (Kind)', gender: 'Female' },
+  { id: 'Apollo', name: 'Apollo (Musical)', gender: 'Male' },
+  { id: 'Artemis', name: 'Artemis (Sharp)', gender: 'Female' },
+  { id: 'Dionysus', name: 'Dionysus (Rich)', gender: 'Male' },
+  { id: 'Athena', name: 'Athena (Wise)', gender: 'Female' }
+];
 
 const VIDEO_FORMATS = [
   { value: 'mp4', label: 'MP4 (Standard)' },
@@ -170,6 +279,7 @@ const formatSize = (bytes: number) => {
 };
 
 export default function App() {
+  const [view, setView] = useState<'home' | 'slicer' | 'cult' | 'cult-voice' | 'cult-video-lang'>('home');
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -185,6 +295,17 @@ export default function App() {
   const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
   const [directoryHandle, setDirectoryHandle] = useState<any>(null);
+  const [lastGeneratedSettings, setLastGeneratedSettings] = useState<string>('');
+
+  // AI States
+  const [voiceMode, setVoiceMode] = useState<'tts' | 'stt' | 'translate'>('tts');
+  const [targetLang, setTargetLang] = useState('en');
+  const [selectedVoice, setSelectedVoice] = useState('Zephyr');
+  const [inputText, setInputText] = useState('');
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const [aiResult, setAiResult] = useState<string | null>(null);
+  const [aiTextResult, setAiTextResult] = useState<string | null>(null);
+  const [dubbedVideoUrl, setDubbedVideoUrl] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const ffmpegRef = useRef(new FFmpeg());
@@ -231,6 +352,7 @@ export default function App() {
     setClips([]);
     setDownloadedClips(new Set());
     setDirectoryHandle(null);
+    setLastGeneratedSettings('');
     setProgress(0);
     setNotification({ message: "System reset. All processes stopped.", type: 'info' });
   };
@@ -290,7 +412,11 @@ export default function App() {
     setIsProcessing(true);
     const ffmpeg = ffmpegRef.current;
     const websiteName = WEBSITE_NAME.replace(/\s+/g, '_');
-    const fileName = `${websiteName}_Part${clip.id.split('-')[1]}.${outputFormat}`;
+    
+    // Pad the part number for correct file system sorting (e.g., Part001 instead of Part1)
+    const partNum = clip.id.split('-')[1];
+    const paddedNum = partNum.padStart(3, '0');
+    const fileName = `${websiteName}_Part${paddedNum}.${outputFormat}`;
 
     try {
       setNotification({ message: `Slicing ${clip.label}...`, type: 'info' });
@@ -386,6 +512,178 @@ export default function App() {
     setNotification({ message: "Downloads cancelled.", type: 'info' });
   };
 
+  // AI Handlers
+  const handleTTS = async () => {
+    if (!inputText) return;
+    setIsProcessingAI(true);
+    setAiResult(null);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ parts: [{ text: `Say in ${LANGUAGES.find(l => l.code === targetLang)?.name}: ${inputText}` }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: selectedVoice as any },
+            },
+          },
+        },
+      });
+
+      const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (base64Audio) {
+        const audioUrl = `data:audio/mp3;base64,${base64Audio}`;
+        setAiResult(audioUrl);
+        setNotification({ message: "Speech generated!", type: 'success' });
+      }
+    } catch (err) {
+      console.error("TTS Error:", err);
+      setNotification({ message: "Failed to generate speech.", type: 'error' });
+    } finally {
+      setIsProcessingAI(false);
+    }
+  };
+
+  const handleTranslate = async () => {
+    if (!inputText) return;
+    setIsProcessingAI(true);
+    setAiTextResult(null);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Translate the following to ${LANGUAGES.find(l => l.code === targetLang)?.name}: ${inputText}`,
+      });
+      setAiTextResult(response.text);
+      setNotification({ message: "Translation complete!", type: 'success' });
+    } catch (err) {
+      console.error("Translate Error:", err);
+      setNotification({ message: "Failed to translate.", type: 'error' });
+    } finally {
+      setIsProcessingAI(false);
+    }
+  };
+
+  const handleSTT = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsProcessingAI(true);
+    setAiTextResult(null);
+    setNotification({ message: "Transcribing audio...", type: 'info' });
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: [
+            {
+              parts: [
+                { inlineData: { data: base64, mimeType: file.type } },
+                { text: `Transcribe this audio and translate it to ${LANGUAGES.find(l => l.code === targetLang)?.name} if it's in a different language.` }
+              ]
+            }
+          ]
+        });
+        setAiTextResult(response.text);
+        setNotification({ message: "Transcription complete!", type: 'success' });
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("STT Error:", err);
+      setNotification({ message: "Failed to transcribe audio.", type: 'error' });
+    } finally {
+      setIsProcessingAI(false);
+    }
+  };
+
+  const handleVideoDub = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsProcessingAI(true);
+    setNotification({ message: "Extracting audio from video...", type: 'info' });
+    
+    try {
+      const ffmpeg = ffmpegRef.current;
+      const inputName = 'input_video.mp4';
+      const audioName = 'output_audio.mp3';
+      
+      await ffmpeg.writeFile(inputName, await fetchFile(file));
+      
+      // Extract audio
+      await ffmpeg.exec(['-i', inputName, '-vn', '-ab', '128k', '-ar', '44100', '-y', audioName]);
+      const audioData = await ffmpeg.readFile(audioName);
+      const audioBase64 = btoa(new Uint8Array(audioData as ArrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+      
+      setNotification({ message: "Translating and generating new voice...", type: 'info' });
+      
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      
+      // 1. Transcribe & Translate
+      const transResponse = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [
+          {
+            parts: [
+              { inlineData: { data: audioBase64, mimeType: 'audio/mp3' } },
+              { text: `Transcribe this video's audio and translate it to ${LANGUAGES.find(l => l.code === targetLang)?.name}. Return ONLY the translated text.` }
+            ]
+          }
+        ]
+      });
+      
+      const translatedText = transResponse.text;
+      
+      // 2. TTS
+      const ttsResponse = await ai.models.generateContent({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ parts: [{ text: translatedText }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: selectedVoice as any },
+            },
+          },
+        },
+      });
+      
+      const newAudioBase64 = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!newAudioBase64) throw new Error("TTS failed");
+      
+      const newAudioData = Uint8Array.from(atob(newAudioBase64), c => c.charCodeAt(0));
+      await ffmpeg.writeFile('new_audio.mp3', newAudioData);
+      
+      setNotification({ message: "Merging new audio with video...", type: 'info' });
+      
+      // 3. Merge (Replace original audio)
+      await ffmpeg.exec([
+        '-i', inputName, 
+        '-i', 'new_audio.mp3', 
+        '-c:v', 'copy', 
+        '-map', '0:v:0', 
+        '-map', '1:a:0', 
+        '-shortest', 
+        '-y', 'dubbed_video.mp4'
+      ]);
+      
+      const dubbedData = await ffmpeg.readFile('dubbed_video.mp4');
+      const dubbedUrl = URL.createObjectURL(new Blob([dubbedData], { type: 'video/mp4' }));
+      
+      setDubbedVideoUrl(dubbedUrl);
+      setNotification({ message: "Video dubbed successfully!", type: 'success' });
+      
+    } catch (err) {
+      console.error("Dubbing Error:", err);
+      setNotification({ message: "Failed to dub video.", type: 'error' });
+    } finally {
+      setIsProcessingAI(false);
+    }
+  };
+
   const onDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
@@ -429,9 +727,15 @@ export default function App() {
     const m = parseInt(timeValue.m as string) || 0;
     const s = parseInt(timeValue.s as string) || 0;
 
+    const currentSettings = JSON.stringify({ splitMode, partsCount, timeValue, metadataName: metadata.name });
+    if (currentSettings === lastGeneratedSettings && clips.length > 0) {
+      setNotification({ message: "Clips already generated for these settings.", type: 'info' });
+      return;
+    }
+
     const segmentDuration = splitMode === 'parts' 
-      ? metadata.duration / currentParts 
-      : (h * 3600) + (m * 60) + s;
+      ? Number((metadata.duration / currentParts).toFixed(3))
+      : Number(((h * 3600) + (m * 60) + s).toFixed(3));
 
     if (segmentDuration < 1) {
       setNotification({ message: "Clip duration must be at least 1 second.", type: 'error' });
@@ -482,6 +786,7 @@ export default function App() {
         requestAnimationFrame(animateProgress);
       } else {
         setClips(newClips);
+        setLastGeneratedSettings(currentSettings);
         setIsProcessing(false);
         setProgress(0);
         setNotification({ message: `Generated ${newClips.length} clips!`, type: 'success' });
@@ -517,52 +822,420 @@ export default function App() {
       </AnimatePresence>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
-        {!videoFile ? (
-          <div className="max-w-3xl mx-auto space-y-12 py-20">
+        {view === 'home' && (
+          <div className="max-w-4xl mx-auto py-20 space-y-12">
             <div className="text-center space-y-4">
-              <div className="w-24 h-24 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-500/20 animate-bounce">
-                <Video className="text-black w-12 h-12" />
-              </div>
-              <h2 className="text-5xl font-bold tracking-tight">
-                Ready to <span className="text-emerald-500 italic">Slice?</span>
+              <h2 className="text-6xl font-black tracking-tighter">
+                CHOOSE YOUR <span className="text-emerald-500 italic">POWER</span>
               </h2>
-              <p className="text-white/50 text-lg">
-                Upload your video to unlock the world's most powerful slicing engine.
-              </p>
+              <p className="text-white/40 text-lg">The world's most advanced AI media toolkit at your fingertips.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <motion.button
+                whileHover={{ scale: 1.02, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setView('slicer')}
+                className="group relative aspect-[4/3] bg-white/[0.02] border border-white/10 rounded-[40px] p-10 text-left flex flex-col justify-between overflow-hidden transition-all hover:border-emerald-500/50 hover:bg-emerald-500/[0.02]"
+              >
+                <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-emerald-500/20 group-hover:rotate-12 transition-transform">
+                  <Scissors className="text-black w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold mb-2">Video Slicer</h3>
+                  <p className="text-white/40 leading-relaxed">High-precision AI slicing for long videos. Up to 1,000 clips in seconds.</p>
+                </div>
+                <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ChevronRight className="w-8 h-8 text-emerald-500" />
+                </div>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setView('cult')}
+                className="group relative aspect-[4/3] bg-white/[0.02] border border-white/10 rounded-[40px] p-10 text-left flex flex-col justify-between overflow-hidden transition-all hover:border-purple-500/50 hover:bg-purple-500/[0.02]"
+              >
+                <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-500/20 group-hover:-rotate-12 transition-transform">
+                  <Zap className="text-black w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold mb-2">Cult of What</h3>
+                  <p className="text-white/40 leading-relaxed">AI Multi-Tool: TTS, STT, Translation, and Video Language Changing.</p>
+                </div>
+                <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ChevronRight className="w-8 h-8 text-purple-500" />
+                </div>
+              </motion.button>
+            </div>
+          </div>
+        )}
+
+        {view === 'cult' && (
+          <div className="max-w-5xl mx-auto space-y-12">
+            <div className="flex items-center justify-between">
+              <button 
+                onClick={() => setView('home')}
+                className="flex items-center gap-2 text-white/40 hover:text-white transition-colors font-bold uppercase tracking-widest text-xs"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" />
+                Back to Home
+              </button>
+              <h2 className="text-2xl font-black italic tracking-tighter text-purple-500">CULT OF WHAT</h2>
             </div>
 
-            <div 
-              {...getRootProps()} 
-              className={cn(
-                "relative group cursor-pointer border-2 border-dashed rounded-[40px] p-20 transition-all duration-500",
-                isDragActive ? "border-emerald-500 bg-emerald-500/5 scale-105" : "border-white/10 hover:border-white/20 bg-white/[0.02]"
-              )}
-            >
-              <input {...getInputProps()} />
-              <div className="flex flex-col items-center text-center space-y-6">
-                {isAnalyzing ? (
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-xl font-bold text-emerald-500 animate-pulse">Processing Video...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <motion.button
+                whileHover={{ y: -5 }}
+                onClick={() => setView('cult-voice')}
+                className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 text-left space-y-6 hover:border-purple-500/50 transition-all group"
+              >
+                <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Music className="text-black w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg">Voice & Text AI</h4>
+                  <p className="text-xs text-white/40 mt-1">TTS, STT, and Translation</p>
+                </div>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ y: -5 }}
+                onClick={() => setView('cult-video-lang')}
+                className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 text-left space-y-6 hover:border-blue-500/50 transition-all group"
+              >
+                <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Globe className="text-black w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg">Video Language</h4>
+                  <p className="text-xs text-white/40 mt-1">Change Video Language</p>
+                </div>
+              </motion.button>
+
+              <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-8 text-left space-y-6 opacity-40 cursor-not-allowed">
+                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                  <Video className="text-white/40 w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg">Video Pro</h4>
+                  <p className="text-xs text-white/40 mt-1">Coming Soon</p>
+                </div>
+              </div>
+
+              <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-8 text-left space-y-6 opacity-40 cursor-not-allowed">
+                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                  <Settings className="text-white/40 w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg">Future Tool</h4>
+                  <p className="text-xs text-white/40 mt-1">Coming Soon</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'cult-voice' && (
+          <div className="max-w-5xl mx-auto space-y-8">
+            <div className="flex items-center justify-between">
+              <button 
+                onClick={() => setView('cult')}
+                className="flex items-center gap-2 text-white/40 hover:text-white transition-colors font-bold uppercase tracking-widest text-xs"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" />
+                Back to Folder
+              </button>
+              <h2 className="text-2xl font-black italic tracking-tighter text-purple-500">VOICE & TEXT AI</h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-4 space-y-6">
+                <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 space-y-6">
+                  <div className="flex p-1 bg-black rounded-2xl border border-white/5">
+                    {['tts', 'stt', 'translate'].map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => setVoiceMode(mode as any)}
+                        className={cn(
+                          "flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
+                          voiceMode === mode ? "bg-purple-500 text-black shadow-lg" : "text-white/40 hover:text-white"
+                        )}
+                      >
+                        {mode}
+                      </button>
+                    ))}
                   </div>
-                ) : (
-                  <>
-                    <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                      <Upload className="w-10 h-10 text-emerald-500" />
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Target Language</label>
+                      <select 
+                        value={targetLang}
+                        onChange={(e) => setTargetLang(e.target.value)}
+                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-purple-500 outline-none transition-colors"
+                      >
+                        {LANGUAGES.map(lang => (
+                          <option key={lang.code} value={lang.code}>{lang.name}</option>
+                        ))}
+                      </select>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold">Drop your masterpiece here</p>
-                      <p className="text-white/40 mt-2">Supports any video format, up to 5 hours long</p>
+
+                    {voiceMode === 'tts' && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Voice Selection</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {VOICES.map(voice => (
+                            <button
+                              key={voice.id}
+                              onClick={() => setSelectedVoice(voice.id)}
+                              className={cn(
+                                "p-3 rounded-xl border text-left transition-all",
+                                selectedVoice === voice.id ? "bg-purple-500/20 border-purple-500 text-purple-400" : "bg-black border-white/5 text-white/40 hover:border-white/20"
+                              )}
+                            >
+                              <p className="text-[10px] font-bold truncate">{voice.name}</p>
+                              <p className="text-[8px] opacity-60">{voice.gender}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-8 space-y-6">
+                <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 min-h-[400px] flex flex-col">
+                  {voiceMode === 'tts' || voiceMode === 'translate' ? (
+                    <textarea
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      placeholder={voiceMode === 'tts' ? "Enter text to convert to speech..." : "Enter text to translate..."}
+                      className="flex-1 bg-transparent border-none outline-none resize-none text-xl font-medium placeholder:text-white/10"
+                    />
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center space-y-6">
+                      <div className="w-24 h-24 bg-purple-500/10 rounded-full flex items-center justify-center border border-purple-500/20">
+                        <Music className="w-10 h-10 text-purple-500" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-bold">Upload Audio for STT</p>
+                        <p className="text-white/40 text-sm">Supports MP3, WAV, M4A</p>
+                      </div>
+                      <button 
+                        onClick={() => document.getElementById('audio-upload')?.click()}
+                        className="px-8 py-3 bg-purple-500 text-black rounded-full font-bold hover:bg-purple-400 transition-all"
+                      >
+                        Select Audio File
+                      </button>
+                      <input 
+                        id="audio-upload"
+                        type="file"
+                        accept="audio/*"
+                        className="hidden"
+                        onChange={handleSTT}
+                      />
                     </div>
-                    <button className="px-10 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.3)] transition-all">
-                      Select Video File
-                    </button>
-                  </>
+                  )}
+
+                  <div className="pt-8 border-t border-white/5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {voiceMode === 'tts' && (
+                        <button 
+                          onClick={handleTTS}
+                          disabled={!inputText || isProcessingAI}
+                          className="px-8 py-3 bg-purple-500 text-black rounded-full font-bold hover:bg-purple-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                        >
+                          {isProcessingAI ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <Play className="w-4 h-4" />}
+                          Generate & Test
+                        </button>
+                      )}
+                      {voiceMode === 'translate' && (
+                        <button 
+                          onClick={handleTranslate}
+                          disabled={!inputText || isProcessingAI}
+                          className="px-8 py-3 bg-purple-500 text-black rounded-full font-bold hover:bg-purple-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                        >
+                          {isProcessingAI ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <Globe className="w-4 h-4" />}
+                          Translate
+                        </button>
+                      )}
+                    </div>
+                    {aiResult && (
+                      <div className="flex items-center gap-4">
+                        {voiceMode === 'tts' && <audio src={aiResult} controls className="h-10" />}
+                        <button className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-all">
+                          <Download className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {aiTextResult && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-purple-500/10 border border-purple-500/20 rounded-3xl p-8"
+                  >
+                    <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest mb-4">AI Result</p>
+                    <p className="text-lg leading-relaxed">{aiTextResult}</p>
+                  </motion.div>
                 )}
               </div>
             </div>
           </div>
-        ) : (
+        )}
+
+        {view === 'cult-video-lang' && (
+          <div className="max-w-5xl mx-auto space-y-8">
+            <div className="flex items-center justify-between">
+              <button 
+                onClick={() => setView('cult')}
+                className="flex items-center gap-2 text-white/40 hover:text-white transition-colors font-bold uppercase tracking-widest text-xs"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" />
+                Back to Folder
+              </button>
+              <h2 className="text-2xl font-black italic tracking-tighter text-blue-500">VIDEO LANGUAGE CHANGER</h2>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-12 text-center space-y-8">
+              {dubbedVideoUrl ? (
+                <div className="space-y-8">
+                  <div className="aspect-video bg-black rounded-3xl overflow-hidden border border-white/10">
+                    <video src={dubbedVideoUrl} controls className="w-full h-full" />
+                  </div>
+                  <div className="flex justify-center gap-4">
+                    <button 
+                      onClick={() => setDubbedVideoUrl(null)}
+                      className="px-8 py-4 bg-white/5 hover:bg-white/10 rounded-full font-bold transition-all"
+                    >
+                      Try Another
+                    </button>
+                    <a 
+                      href={dubbedVideoUrl} 
+                      download="dubbed_video.mp4"
+                      className="px-8 py-4 bg-blue-500 text-black rounded-full font-bold hover:bg-blue-400 transition-all flex items-center gap-2"
+                    >
+                      <Download className="w-5 h-5" />
+                      Download Dubbed Video
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="w-24 h-24 bg-blue-500/10 rounded-[32px] flex items-center justify-center mx-auto border border-blue-500/20">
+                    <Globe className="w-12 h-12 text-blue-500" />
+                  </div>
+                  <div className="max-w-md mx-auto space-y-4">
+                    <h3 className="text-3xl font-bold">Dub Your Video</h3>
+                    <p className="text-white/40">Change the spoken language of your video while keeping the original background sounds.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                    <div className="space-y-2 text-left">
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest ml-4">Source Language</label>
+                      <select className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all">
+                        <option>Auto-Detect</option>
+                        {LANGUAGES.map(lang => (
+                          <option key={lang.code} value={lang.code}>{lang.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2 text-left">
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest ml-4">Target Language</label>
+                      <select 
+                        value={targetLang}
+                        onChange={(e) => setTargetLang(e.target.value)}
+                        className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all"
+                      >
+                        {LANGUAGES.map(lang => (
+                          <option key={lang.code} value={lang.code}>{lang.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="pt-8">
+                    <button 
+                      onClick={() => document.getElementById('video-dub-upload')?.click()}
+                      disabled={isProcessingAI}
+                      className="px-12 py-5 bg-blue-500 text-black rounded-full font-black text-lg hover:bg-blue-400 hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-3 mx-auto"
+                    >
+                      {isProcessingAI ? <div className="w-6 h-6 border-4 border-black/30 border-t-black rounded-full animate-spin" /> : <Upload className="w-6 h-6" />}
+                      {isProcessingAI ? "Processing..." : "Upload & Change Language"}
+                    </button>
+                    <input 
+                      id="video-dub-upload"
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={handleVideoDub}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {view === 'slicer' && (
+          <div className="space-y-8">
+            <button 
+              onClick={() => setView('home')}
+              className="flex items-center gap-2 text-white/40 hover:text-white transition-colors font-bold uppercase tracking-widest text-xs"
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              Back to Home
+            </button>
+            {!videoFile ? (
+              <div className="max-w-3xl mx-auto space-y-12 py-20">
+                <div className="text-center space-y-4">
+                  <div className="w-24 h-24 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-500/20 animate-bounce">
+                    <Video className="text-black w-12 h-12" />
+                  </div>
+                  <h2 className="text-5xl font-bold tracking-tight">
+                    Ready to <span className="text-emerald-500 italic">Slice?</span>
+                  </h2>
+                  <p className="text-white/50 text-lg">
+                    Upload your video to unlock the world's most powerful slicing engine.
+                  </p>
+                </div>
+
+                <div 
+                  {...getRootProps()} 
+                  className={cn(
+                    "relative group cursor-pointer border-2 border-dashed rounded-[40px] p-20 transition-all duration-500",
+                    isDragActive ? "border-emerald-500 bg-emerald-500/5 scale-105" : "border-white/10 hover:border-white/20 bg-white/[0.02]"
+                  )}
+                >
+                  <input {...getInputProps()} />
+                  <div className="flex flex-col items-center text-center space-y-6">
+                    {isAnalyzing ? (
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-xl font-bold text-emerald-500 animate-pulse">Processing Video...</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                          <Upload className="w-10 h-10 text-emerald-500" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">Drop your masterpiece here</p>
+                          <p className="text-white/40 mt-2">Supports any video format, up to 5 hours long</p>
+                        </div>
+                        <button className="px-10 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-emerald-400 hover:shadow-[0_0_30px_rgba(52,211,153,0.3)] transition-all">
+                          Select Video File
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column: Analysis & Preview */}
             <div className="lg:col-span-7 space-y-8">
@@ -919,11 +1592,11 @@ export default function App() {
                   </div>
 
                   <button 
-                    disabled={!videoFile || isProcessing || !ffmpegLoaded}
+                    disabled={!videoFile || isProcessing || !ffmpegLoaded || (JSON.stringify({ splitMode, partsCount, timeValue, metadataName: metadata?.name }) === lastGeneratedSettings && clips.length > 0)}
                     onClick={handleSplit}
                     className={cn(
                       "w-full py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all relative overflow-hidden",
-                      !videoFile || !ffmpegLoaded ? "bg-white/5 text-white/20 cursor-not-allowed" : "bg-emerald-500 text-black hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98]"
+                      !videoFile || !ffmpegLoaded || (JSON.stringify({ splitMode, partsCount, timeValue, metadataName: metadata?.name }) === lastGeneratedSettings && clips.length > 0) ? "bg-white/5 text-white/20 cursor-not-allowed" : "bg-emerald-500 text-black hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98]"
                     )}
                   >
                     {isProcessing && (
@@ -956,6 +1629,8 @@ export default function App() {
             </div>
           </div>
         )}
+      </div>
+    )}
 </main>
 
       <footer className="border-t border-white/10 py-12 mt-12">
