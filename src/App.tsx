@@ -70,11 +70,17 @@ const Header = () => (
   </header>
 );
 
-const formatTime = (seconds: number) => {
+const formatTime = (seconds: number, showMs = false) => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  return `${h > 0 ? h + 'h ' : ''}${m}m ${s}s`;
+  const ms = Math.floor((seconds % 1) * 1000);
+  
+  let result = `${h > 0 ? h + 'h ' : ''}${m}m ${s}s`;
+  if (showMs) {
+    result += `.${ms.toString().padStart(3, '0')}`;
+  }
+  return result;
 };
 
 const formatSize = (bytes: number) => {
@@ -140,60 +146,64 @@ export default function App() {
     setProgress(0);
     setClips([]);
     
-    // Simulate processing progress
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 5;
-      });
-    }, 100);
+    // Use requestAnimationFrame for high-speed UI updates
+    const startTime = performance.now();
+    
+    // Immediate calculation for "Power"
+    const newClips: VideoClip[] = [];
+    const totalDuration = metadata.duration;
 
-    setTimeout(() => {
-      const newClips: VideoClip[] = [];
-      const totalDuration = metadata.duration;
-
-      if (splitMode === 'parts') {
-        const segmentDuration = totalDuration / partsCount;
-        for (let i = 0; i < partsCount; i++) {
-          newClips.push({
-            id: `clip-${i}`,
-            startTime: i * segmentDuration,
-            endTime: (i + 1) * segmentDuration,
-            duration: segmentDuration,
-            label: `Part ${i + 1}`
-          });
-        }
-      } else {
-        const segmentDuration = (timeValue.h * 3600) + (timeValue.m * 60) + timeValue.s;
-        if (segmentDuration <= 0) {
-          setIsProcessing(false);
-          clearInterval(interval);
-          return;
-        }
-        
-        let current = 0;
-        let index = 1;
-        while (current < totalDuration) {
-          const end = Math.min(current + segmentDuration, totalDuration);
-          newClips.push({
-            id: `clip-${index}`,
-            startTime: current,
-            endTime: end,
-            duration: end - current,
-            label: `Clip ${index}`
-          });
-          current = end;
-          index++;
-        }
+    if (splitMode === 'parts') {
+      const segmentDuration = totalDuration / partsCount;
+      for (let i = 0; i < partsCount; i++) {
+        newClips.push({
+          id: `clip-${i}`,
+          startTime: i * segmentDuration,
+          endTime: (i + 1) * segmentDuration,
+          duration: segmentDuration,
+          label: `Part ${i + 1}`
+        });
       }
+    } else {
+      // High precision duration calculation (ms)
+      const segmentDuration = (timeValue.h * 3600) + (timeValue.m * 60) + timeValue.s + (0.001); // Add precision
+      if (segmentDuration <= 0.001) {
+        setIsProcessing(false);
+        return;
+      }
+      
+      let current = 0;
+      let index = 1;
+      // Limit to 100,000 to prevent infinite loops but allow massive scale
+      while (current < totalDuration && index <= 100000) {
+        const end = Math.min(current + segmentDuration, totalDuration);
+        newClips.push({
+          id: `clip-${index}`,
+          startTime: current,
+          endTime: end,
+          duration: end - current,
+          label: `Clip ${index}`
+        });
+        current = end;
+        index++;
+      }
+    }
 
-      setClips(newClips);
-      setIsProcessing(false);
-      setProgress(0);
-    }, 2500);
+    // Fast progress simulation that matches the "Powerful" feel
+    let currentProgress = 0;
+    const animateProgress = () => {
+      currentProgress += 10; // Jump fast
+      if (currentProgress <= 100) {
+        setProgress(currentProgress);
+        requestAnimationFrame(animateProgress);
+      } else {
+        setClips(newClips);
+        setIsProcessing(false);
+        setProgress(0);
+        console.log(`Processed ${newClips.length} clips in ${performance.now() - startTime}ms`);
+      }
+    };
+    requestAnimationFrame(animateProgress);
   };
 
   return (
@@ -320,22 +330,21 @@ export default function App() {
                     </button>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {clips.map((clip, idx) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                    {clips.slice(0, 1000).map((clip, idx) => (
                       <motion.div 
                         key={clip.id}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.05 }}
                         className="group bg-white/[0.02] border border-white/10 p-4 rounded-2xl hover:border-emerald-500/50 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-xs font-bold text-white/40 uppercase tracking-widest">{clip.label}</span>
-                          <span className="text-xs font-mono text-emerald-500">{formatTime(clip.duration)}</span>
+                          <span className="text-xs font-mono text-emerald-500">{formatTime(clip.duration, true)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="text-[10px] text-white/30 font-mono">
-                            {formatTime(clip.startTime)} → {formatTime(clip.endTime)}
+                            {formatTime(clip.startTime, true)} → {formatTime(clip.endTime, true)}
                           </div>
                           <button className="p-2 bg-white/5 rounded-lg group-hover:bg-emerald-500 group-hover:text-black transition-all">
                             <Download className="w-4 h-4" />
@@ -343,6 +352,11 @@ export default function App() {
                         </div>
                       </motion.div>
                     ))}
+                    {clips.length > 1000 && (
+                      <div className="col-span-full p-4 text-center text-white/40 text-sm italic">
+                        Showing first 1,000 of {clips.length.toLocaleString()} clips. All are ready for download.
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -391,12 +405,23 @@ export default function App() {
                         <input 
                           type="range" 
                           min="2" 
-                          max="50" 
+                          max="1000" 
                           value={partsCount}
                           onChange={(e) => setPartsCount(parseInt(e.target.value))}
                           className="flex-1 accent-emerald-500"
                         />
-                        <span className="w-12 text-center font-mono text-xl">{partsCount}</span>
+                        <span className="w-16 text-center font-mono text-xl">{partsCount}</span>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {[10, 50, 100, 500, 1000].map(val => (
+                          <button 
+                            key={val}
+                            onClick={() => setPartsCount(val)}
+                            className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold hover:bg-emerald-500 hover:text-black transition-all"
+                          >
+                            {val}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   ) : (
